@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — LMR</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Admin-only styles ── */
+    body { background: var(--gray-bg); }
+
+    #lock-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #lock-screen.hidden { display: none; }
+
+    .lock-card {
+      background: var(--white);
+      border: 1px solid var(--gray-border);
+      border-radius: 20px;
+      padding: 48px 40px 40px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .lock-logo {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--pink);
+      letter-spacing: -1px;
+    }
+    .lock-icon {
+      color: var(--pink);
+    }
+    .lock-icon svg { width: 44px; height: 44px; }
+    .lock-title {
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+      margin-top: -8px;
+    }
+    .lock-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: -12px;
+    }
+    .lock-input-wrap {
+      width: 100%;
+      position: relative;
+    }
+    .lock-input-wrap input {
+      width: 100%;
+      background: var(--gray-input);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 14px 46px 14px 16px;
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+      letter-spacing: 2px;
+    }
+    .lock-input-wrap input:focus { border-color: var(--pink); }
+    .lock-input-wrap input.error { border-color: #e53935; animation: shake 0.3s ease; }
+    .toggle-pw {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+    }
+    .toggle-pw svg { width: 18px; height: 18px; }
+    .lock-error {
+      font-size: 13px;
+      color: #e53935;
+      font-weight: 500;
+      min-height: 18px;
+      text-align: center;
+    }
+    .btn-unlock {
+      width: 100%;
+      background: var(--pink);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-unlock:hover { background: var(--pink-dark); }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
+
+    /* ── Admin layout ── */
+    #admin-app {
+      display: flex;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* ── Desktop: sidebar ── */
+    .admin-sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--white);
+      border-right: 1px solid var(--gray-border);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 0 20px;
+    }
+    .admin-sidebar-logo { font-size: 22px; font-weight: 800; color: var(--pink); padding: 0 22px 6px; }
+    .admin-sidebar-sub { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); padding: 0 22px 20px; }
+
+    /* ── Mobile: bottom nav ── */
+    @media (max-width: 700px) {
+      #admin-app { flex-direction: column; }
+
+      .admin-sidebar {
+        width: 100%;
+        height: 60px;
+        flex-direction: row;
+        padding: 0;
+        border-right: none;
+        border-top: 1px solid var(--gray-border);
+        order: 2;
+        flex-shrink: 0;
+        overflow: hidden;
+      }
+      .admin-sidebar-logo { display: none; }
+      .admin-sidebar-sub { display: none; }
+      .admin-sidebar-spacer { display: none; }
+      .admin-sidebar-footer { display: none; }
+
+      .admin-nav-btn {
+        flex: 1;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        font-size: 10px;
+        font-weight: 500;
+        padding: 6px 2px;
+        border-radius: 0;
+        margin: 0;
+        height: 100%;
+      }
+      .admin-nav-btn svg { width: 22px; height: 22px; }
+      .admin-nav-btn.active { background: none; color: var(--pink); font-weight: 600; }
+
+      .admin-main { order: 1; flex: 1; overflow: hidden; }
+      .admin-page-header { padding: 16px 16px 10px; }
+      .admin-page-header h1 { font-size: 22px; }
+      .admin-section { margin: 0 12px 16px; }
+      .classement-table th, .classement-table td { padding: 8px 10px; font-size: 12px; }
+    }
+    .admin-nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 12px 22px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 10px;
+      margin: 0 10px;
+      transition: background 0.12s, color 0.12s;
+    }
+    .admin-nav-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .admin-nav-btn.active { color: var(--pink); background: var(--pink-light); font-weight: 600; }
+    .admin-nav-btn:hover:not(.active) { background: var(--gray-input); color: var(--text-main); }
+    .admin-sidebar-spacer { flex: 1; }
+    .admin-sidebar-footer {
+      padding: 12px 10px 0;
+      border-top: 1px solid var(--gray-border);
+      margin-top: 12px;
+    }
+    .btn-back-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 10px;
+      width: 100%;
+      transition: background 0.1s;
+    }
+    .btn-back-main:hover { background: var(--gray-input); color: var(--text-main); }
+    .btn-back-main svg { width: 16px; height: 16px; }
+    .btn-logout {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 12px;
+      font-size: 13px;
+      color: #e53935;
+      cursor: pointer;
+      border-radius: 10px;
+      width: 100%;
+      transition: background 0.1s;
+      margin-top: 4px;
+    }
+    .btn-logout:hover { background: #fce4e4; }
+    .btn-logout svg { width: 16px; height: 16px; }
+
+    /* ── Main content ── */
+    .admin-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--gray-bg);
+    }
+    .admin-page {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      overflow-y: auto;
+      height: 100dvh;
+    }
+    .admin-page.active { display: flex; }
+
+    /* ── Admin page header ── */
+    .admin-page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 32px 16px;
+      background: var(--gray-bg);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .admin-page-header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .admin-page-header .page-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Section cards ── */
+    .admin-section {
+      margin: 0 32px 24px;
+      background: var(--white);
+      border-radius: 14px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    .admin-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--gray-border);
+    }
+    .admin-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    /* ── Classement editor table ── */
+    .classement-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .classement-table th {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      padding: 10px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-border);
+      background: #fafafa;
+    }
+    .classement-table td {
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--gray-border);
+      vertical-align: middle;
+    }
+    .classement-table tr:last-child td { border-bottom: none; }
+    .classement-table tr:hover td { background: #fafafa; }
+
+    .td-rank {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-muted);
+      width: 40px;
+    }
+    .td-rank.top1 { color: #FFB800; }
+    .td-rank.top2 { color: #9E9E9E; }
+    .td-rank.top3 { color: #A0522D; }
+
+    .td-name { font-size: 15px; font-weight: 600; }
+    .td-name .td-sub { font-size: 12px; color: var(--text-muted); font-weight: 400; margin-top: 1px; }
+
+    .inline-input {
+      background: var(--gray-input);
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text-main);
+      outline: none;
+      width: 90px;
+      text-align: center;
+      transition: border-color 0.15s;
+    }
+    .inline-input:focus { border-color: var(--pink); background: white; }
+    .inline-input.wide { width: 140px; text-align: left; }
+
+    .td-status select {
+      background: var(--gray-input);
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+    .td-status select:focus { border-color: var(--pink); }
+
+    .td-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+    /* ── Quick add form ── */
+    .quick-add-row {
+      display: flex;
+      gap: 10px;
+      padding: 14px 20px;
+      align-items: center;
+      background: #fafafa;
+      border-top: 1px solid var(--gray-border);
+      flex-wrap: wrap;
+    }
+    .quick-add-row .form-input { flex: 1; min-width: 140px; }
+    .quick-add-row .inline-input { width: 90px; }
+    .btn-add-row {
+      background: var(--pink);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-add-row:hover { background: var(--pink-dark); }
+    .btn-add-row svg { width: 16px; height: 16px; }
+
+    /* ── Stats cards ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      padding: 0 32px 24px;
+    }
+    .stat-card {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 20px 22px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    .stat-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px; }
+    .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -1px; color: var(--text-main); }
+    .stat-value.pink { color: var(--pink); }
+
+    /* ── Votes summary ── */
+    .vote-bar-wrap { padding: 0 20px 4px; }
+    .vote-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--gray-border);
+    }
+    .vote-row:last-child { border-bottom: none; }
+    .vote-name { font-size: 14px; font-weight: 600; min-width: 180px; }
+    .vote-bar-bg {
+      flex: 1;
+      height: 8px;
+      background: var(--gray-input);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .vote-bar-fill {
+      height: 100%;
+      background: var(--pink);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .vote-count {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--pink);
+      min-width: 40px;
+      text-align: right;
+    }
+    .vote-pct {
+      font-size: 12px;
+      color: var(--text-muted);
+      min-width: 38px;
+      text-align: right;
+    }
+
+    /* ── Save banner ── */
+    .save-banner {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text-main);
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 20px;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      z-index: 100;
+      font-size: 14px;
+      transition: opacity 0.3s;
+    }
+    .save-banner.hidden { opacity: 0; pointer-events: none; }
+    .save-banner .btn-save-banner {
+      background: var(--pink);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .save-banner .btn-discard {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* ── Empty state inside admin ── */
+    .admin-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 30px;
+      gap: 10px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .admin-empty svg { width: 42px; height: 42px; color: #ccc; margin-bottom: 4px; }
+    .admin-empty-title { font-size: 15px; font-weight: 600; }
+    .admin-empty-sub { font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Lock Screen ── -->
+<div id="lock-screen">
+  <div class="lock-card">
+    <div class="lock-logo">LMR</div>
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0110 0v4"/>
+      </svg>
+    </div>
+    <div class="lock-title">Espace Administrateur</div>
+    <div class="lock-sub">Entrez le mot de passe pour accéder à cette page.</div>
+    <div class="lock-input-wrap">
+      <input type="password" id="pw-input" placeholder="Mot de passe" autocomplete="off" />
+      <button class="toggle-pw" id="toggle-pw" tabindex="-1">
+        <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+    <div class="lock-error" id="lock-error"></div>
+    <button class="btn-unlock" id="btn-unlock">Accéder</button>
+  </div>
+</div>
+
+<!-- ── Admin App ── -->
+<div id="admin-app">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar-logo">LMR</div>
+    <div class="admin-sidebar-sub">Administration</div>
+
+    <button class="admin-nav-btn active" data-admin-page="coureurs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><path d="M12 7c-2 0-4 1-5 3l-2 5h3l1 4h6l1-4h3l-2-5c-1-2-3-3-5-3z"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/></svg>
+      <span>Coureurs</span>
+    </button>
+    <button class="admin-nav-btn" data-admin-page="classement">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 20 18 10"/><polyline points="12 20 12 4"/><polyline points="6 20 6 14"/></svg>
+      <span>Classement</span>
+    </button>
+    <button class="admin-nav-btn" data-admin-page="votes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <span>Votes</span>
+    </button>
+    <button class="admin-nav-btn" data-admin-page="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Dashboard</span>
+    </button>
+
+    <div class="admin-sidebar-spacer"></div>
+
+    <div class="admin-sidebar-footer">
+      <button class="btn-back-main" onclick="window.location.href='index.html'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Retour à l'app
+      </button>
+      <button class="btn-logout" id="btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Se déconnecter
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="admin-main">
+
+    <!-- PAGE: Coureurs -->
+    <div class="admin-page active" id="admin-page-coureurs">
+      <div class="admin-page-header">
+        <div>
+          <h1>Coureurs</h1>
+          <div class="page-subtitle">Gérer la liste des coureurs disponibles au vote</div>
+        </div>
+        <button class="btn-add" onclick="openAdminAddCoureur()">+ Ajouter</button>
+      </div>
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <span class="admin-section-title">Liste des coureurs</span>
+          <span id="admin-coureurs-count" style="font-size:13px;color:var(--text-muted)"></span>
+        </div>
+        <table class="classement-table">
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Nom</th>
+              <th>État</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-coureurs-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAGE: Classement Coureurs -->
+    <div class="admin-page" id="admin-page-classement">
+      <div class="admin-page-header">
+        <div>
+          <h1>Classement Coureurs</h1>
+          <div class="page-subtitle">Saisie manuelle du classement final de la course</div>
+        </div>
+        <button class="btn-add" onclick="showAddRowForm()">+ Ajouter</button>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <span class="admin-section-title">Classement final</span>
+          <span id="classement-count" style="font-size:13px;color:var(--text-muted)"></span>
+        </div>
+        <table class="classement-table" id="classement-table-body">
+          <thead>
+            <tr>
+              <th>Pos.</th>
+              <th>Coureur</th>
+              <th>Score / Points</th>
+              <th>Temps</th>
+              <th>Statut</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="classement-tbody"></tbody>
+        </table>
+
+        <!-- Quick add form -->
+        <div class="quick-add-row" id="add-row-form" style="display:none">
+          <select class="form-input" id="add-coureur-select" style="flex:1;min-width:160px">
+            <option value="">-- Choisir un coureur --</option>
+          </select>
+          <input class="inline-input" type="number" id="add-position" placeholder="Pos." min="1" style="width:70px" />
+          <input class="inline-input" type="number" id="add-score" placeholder="Score" step="0.01" style="width:90px" />
+          <input class="inline-input wide" type="text" id="add-temps" placeholder="Temps (ex: 3:45.21)" style="width:130px" />
+          <select class="form-input" id="add-statut" style="width:120px;flex:none">
+            <option value="active">Actif</option>
+            <option value="inactive">Inactif</option>
+          </select>
+          <button class="btn-add-row" onclick="addClassementRow()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Ajouter
+          </button>
+          <button class="btn-cancel" style="padding:10px 14px;flex:none" onclick="hideAddRowForm()">Annuler</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: Votes / Pronostics -->
+    <div class="admin-page" id="admin-page-votes">
+      <div class="admin-page-header">
+        <div>
+          <h1>Votes &amp; Pronostics</h1>
+          <div class="page-subtitle">Résumé des pronostics par coureur</div>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <span class="admin-section-title">Coureurs les plus choisis</span>
+          <span id="votes-total-label" style="font-size:13px;color:var(--text-muted)"></span>
+        </div>
+        <div id="votes-list"></div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <span class="admin-section-title">Détail de tous les pronostics</span>
+          <input type="text" id="votes-search" placeholder="Recherche..." style="background:var(--gray-input);border:none;border-radius:8px;padding:6px 12px;font-size:13px;outline:none;width:180px" oninput="filterVotesDetail(this.value)" />
+        </div>
+        <table class="classement-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Participant</th>
+              <th>Coureur choisi</th>
+              <th>Temps prévu</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="votes-detail-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAGE: Dashboard -->
+    <div class="admin-page" id="admin-page-dashboard">
+      <div class="admin-page-header">
+        <div>
+          <h1>Vue d'ensemble</h1>
+          <div class="page-subtitle">Statistiques générales</div>
+        </div>
+      </div>
+
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <span class="admin-section-title">Top 3 Pronostiqueurs</span>
+        </div>
+        <div id="dashboard-top3"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Save banner -->
+<div class="save-banner hidden" id="save-banner">
+  <span>Modifications non enregistrées</span>
+  <button class="btn-discard" onclick="discardChanges()">Annuler</button>
+  <button class="btn-save-banner" onclick="saveAllChanges()">Enregistrer</button>
+</div>
+
+<script src="data.js"></script>
+<script src="config.js"></script>
+<script>
+let adminPronostics = [];
+
+// ── Password gate ──
+const ADMIN_PASSWORD = 'Larosiere';
+const SESSION_KEY = 'lmr_admin_auth';
+
+const lockScreen = document.getElementById('lock-screen');
+const pwInput = document.getElementById('pw-input');
+const lockError = document.getElementById('lock-error');
+const togglePwBtn = document.getElementById('toggle-pw');
+const eyeIcon = document.getElementById('eye-icon');
+
+// Check if already authenticated this session
+if (sessionStorage.getItem(SESSION_KEY) === '1') {
+  lockScreen.classList.add('hidden');
+  initAdmin();
+}
+
+document.getElementById('btn-unlock').addEventListener('click', tryUnlock);
+pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+
+togglePwBtn.addEventListener('click', () => {
+  const isPassword = pwInput.type === 'password';
+  pwInput.type = isPassword ? 'text' : 'password';
+  eyeIcon.innerHTML = isPassword
+    ? `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+       <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+       <line x1="1" y1="1" x2="23" y2="23"/>`
+    : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+});
+
+function tryUnlock() {
+  const val = pwInput.value;
+  if (val === ADMIN_PASSWORD) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    lockError.textContent = '';
+    lockScreen.classList.add('hidden');
+    initAdmin();
+  } else {
+    lockError.textContent = 'Mot de passe incorrect.';
+    pwInput.classList.add('error');
+    pwInput.value = '';
+    setTimeout(() => pwInput.classList.remove('error'), 400);
+  }
+}
+
+document.getElementById('btn-logout').addEventListener('click', () => {
+  sessionStorage.removeItem(SESSION_KEY);
+  lockScreen.classList.remove('hidden');
+  pwInput.value = '';
+  lockError.textContent = '';
+});
+
+// ── Admin navigation ──
+function initAdmin() {
+  document.querySelectorAll('[data-admin-page]').forEach(btn => {
+    btn.addEventListener('click', () => navigateAdmin(btn.dataset.adminPage));
+  });
+  SB.get('coureurs').then(data => {
+    DB.coureurs = data;
+    renderAdminCoureurs();
+    renderClassementPage();
+    renderDashboard();
+  }).catch(() => {
+    renderAdminCoureurs();
+    renderClassementPage();
+    renderDashboard();
+  });
+  renderVotesPage();
+}
+
+function navigateAdmin(page) {
+  document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('[data-admin-page]').forEach(b => b.classList.remove('active'));
+  document.getElementById(`admin-page-${page}`).classList.add('active');
+  document.querySelector(`[data-admin-page="${page}"]`).classList.add('active');
+  if (page === 'votes') renderVotesPage();
+  if (page === 'dashboard') renderDashboard();
+}
+
+// ── Pending changes ──
+let pendingChanges = {};
+const saveBanner = document.getElementById('save-banner');
+
+function markDirty(id, field, value) {
+  if (!pendingChanges[id]) pendingChanges[id] = {};
+  pendingChanges[id][field] = value;
+  saveBanner.classList.remove('hidden');
+}
+
+function saveAllChanges() {
+  Object.entries(pendingChanges).forEach(([id, changes]) => {
+    const entry = DB.classementCoureurs.find(x => x.id === parseInt(id));
+    if (entry) Object.assign(entry, changes);
+  });
+  DB.save();
+  pendingChanges = {};
+  saveBanner.classList.add('hidden');
+  renderClassementPage();
+  renderDashboard();
+  showToast('Classement enregistré');
+}
+
+function discardChanges() {
+  pendingChanges = {};
+  saveBanner.classList.add('hidden');
+  renderClassementPage();
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+// ── Confirm ──
+function confirmDelete(msg, onConfirm) {
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-overlay';
+  overlay.innerHTML = `
+    <div class="confirm-box">
+      <div class="confirm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>
+      <div class="confirm-title">Supprimer</div>
+      <div class="confirm-msg">${msg}</div>
+      <div class="confirm-btns">
+        <button class="btn-confirm-cancel">Annuler</button>
+        <button class="btn-confirm-delete">Supprimer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('.btn-confirm-cancel').onclick = () => overlay.remove();
+  overlay.querySelector('.btn-confirm-delete').onclick = () => { overlay.remove(); onConfirm(); };
+}
+
+// ── PAGE: Classement ──
+function renderClassementPage() {
+  const tbody = document.getElementById('classement-tbody');
+  const countEl = document.getElementById('classement-count');
+  const list = [...DB.classementCoureurs].sort((a,b) => a.position - b.position);
+  countEl.textContent = `${list.length} coureur${list.length !== 1 ? 's' : ''}`;
+
+  // Populate select in add form
+  const sel = document.getElementById('add-coureur-select');
+  if (sel) {
+    sel.innerHTML = '<option value="">-- Choisir un coureur --</option>' +
+      DB.coureurs.map(c => `<option value="${esc(c.nom)}">${esc(c.nom)}</option>`).join('');
+  }
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="admin-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="18 20 18 10"/><polyline points="12 20 12 4"/><polyline points="6 20 6 14"/></svg>
+      <div class="admin-empty-title">Classement vide</div>
+      <div class="admin-empty-sub">Ajoutez des coureurs avec le bouton + Ajouter</div>
+    </div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map((c, i) => {
+    const rankClass = i===0?'top1':i===1?'top2':i===2?'top3':'';
+    const coureur = DB.coureurs.find(x => x.nom === c.nom);
+    const currentStatut = coureur ? coureur.statut : 'active';
+    return `<tr>
+      <td class="td-rank ${rankClass}">${c.position}</td>
+      <td class="td-name">
+        ${esc(c.nom)}
+        ${coureur ? `<div class="td-sub">Cote: ${parseFloat(coureur.cote).toFixed(2)}</div>` : ''}
+      </td>
+      <td><input class="inline-input" type="number" step="0.01" value="${c.score || 0}" placeholder="Score"
+           onchange="markDirty(${c.id}, 'score', parseFloat(this.value)||0)" /></td>
+      <td><input class="inline-input wide" type="text" value="${esc(c.temps || '')}" placeholder="Ex: 3:45.21"
+           onchange="markDirty(${c.id}, 'temps', this.value)" /></td>
+      <td class="td-status">
+        <select onchange="updateStatut(${c.id}, '${c.nom}', this.value)">
+          <option value="active" ${currentStatut==='active'?'selected':''}>Actif</option>
+          <option value="inactive" ${currentStatut==='inactive'?'selected':''}>Inactif</option>
+        </select>
+      </td>
+      <td class="td-actions">
+        <button class="icon-btn" title="Monter" onclick="moveRow(${c.id}, -1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+        <button class="icon-btn" title="Descendre" onclick="moveRow(${c.id}, 1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <button class="icon-btn delete" title="Supprimer" onclick="deleteRow(${c.id})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateStatut(id, nom, newStatut) {
+  const coureur = DB.coureurs.find(x => x.nom === nom);
+  if (coureur) {
+    coureur.statut = newStatut;
+    DB.save();
+    showToast('Statut mis à jour');
+  }
+}
+
+function moveRow(id, dir) {
+  const list = [...DB.classementCoureurs].sort((a,b) => a.position - b.position);
+  const idx = list.findIndex(x => x.id === id);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= list.length) return;
+  const tmp = list[idx].position;
+  list[idx].position = list[newIdx].position;
+  list[newIdx].position = tmp;
+  DB.classementCoureurs = list;
+  DB.save();
+  renderClassementPage();
+  renderDashboard();
+}
+
+function deleteRow(id) {
+  const entry = DB.classementCoureurs.find(x => x.id === id);
+  if (!entry) return;
+  confirmDelete(`Supprimer "${entry.nom}" du classement ?`, () => {
+    DB.classementCoureurs = DB.classementCoureurs.filter(x => x.id !== id);
+    DB.save();
+    renderClassementPage();
+    renderDashboard();
+    showToast('Entrée supprimée');
+  });
+}
+
+function showAddRowForm() {
+  document.getElementById('add-row-form').style.display = 'flex';
+  document.getElementById('add-position').value = DB.classementCoureurs.length + 1;
+  document.getElementById('add-score').value = '';
+  document.getElementById('add-temps').value = '';
+}
+
+function hideAddRowForm() {
+  document.getElementById('add-row-form').style.display = 'none';
+}
+
+function addClassementRow() {
+  const nom = document.getElementById('add-coureur-select').value;
+  const position = parseInt(document.getElementById('add-position').value);
+  const score = parseFloat(document.getElementById('add-score').value);
+  const temps = document.getElementById('add-temps').value.trim();
+  const statut = document.getElementById('add-statut').value;
+  if (!nom) { showToast('Choisissez un coureur'); return; }
+  DB.classementCoureurs.push({
+    id: DB.nextId(DB.classementCoureurs),
+    nom,
+    position: isNaN(position) ? DB.classementCoureurs.length + 1 : position,
+    score: isNaN(score) ? 0 : score,
+    temps,
+  });
+  const coureur = DB.coureurs.find(x => x.nom === nom);
+  if (coureur) coureur.statut = statut;
+  DB.classementCoureurs.sort((a,b) => a.position - b.position);
+  DB.save();
+  hideAddRowForm();
+  renderClassementPage();
+  renderDashboard();
+  showToast('Coureur ajouté au classement');
+}
+
+// ── PAGE: Votes ──
+function renderVotesPage() {
+  const votesList = document.getElementById('votes-list');
+  const totalLabel = document.getElementById('votes-total-label');
+  if (totalLabel) totalLabel.textContent = 'Chargement...';
+  if (votesList) votesList.innerHTML = '';
+
+  SB.get('pronostics').then(data => {
+    adminPronostics = data;
+    DB.pronostics = data;
+    _renderVotesSummary(data);
+    renderVotesDetail(data);
+  }, (err) => {
+    console.error('Erreur chargement pronostics:', err);
+    showToast('Erreur chargement pronostics: ' + (err?.message || err));
+    _renderVotesSummary(DB.pronostics);
+    renderVotesDetail(DB.pronostics);
+  });
+}
+
+function _renderVotesSummary(list) {
+  const votesList = document.getElementById('votes-list');
+  const totalLabel = document.getElementById('votes-total-label');
+  const counts = {};
+  list.forEach(p => { counts[p.coureur] = (counts[p.coureur] || 0) + 1; });
+  const total = list.length;
+  if (totalLabel) totalLabel.textContent = `${total} pronostic${total !== 1 ? 's' : ''} au total`;
+  const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+  if (!sorted.length) {
+    votesList.innerHTML = `<div class="admin-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <div class="admin-empty-title">Aucun pronostic</div>
+      <div class="admin-empty-sub">Les votes apparaîtront ici</div>
+    </div>`;
+  } else {
+    const max = sorted[0][1];
+    votesList.innerHTML = sorted.map(([nom, count]) => `
+      <div class="vote-row">
+        <div class="vote-name">${esc(nom)}</div>
+        <div class="vote-bar-bg"><div class="vote-bar-fill" style="width:${max ? (count/max*100) : 0}%"></div></div>
+        <div class="vote-count">${count}</div>
+        <div class="vote-pct">${total ? Math.round(count/total*100) : 0}%</div>
+      </div>`).join('');
+  }
+}
+
+function filterVotesDetail(q) {
+  const filtered = adminPronostics.filter(p =>
+    p.participant.toLowerCase().includes(q.toLowerCase()) ||
+    p.coureur.toLowerCase().includes(q.toLowerCase())
+  );
+  renderVotesDetail(filtered);
+}
+
+function renderVotesDetail(list) {
+  const detailTbody = document.getElementById('votes-detail-tbody');
+  if (!detailTbody) return;
+  if (!list.length) {
+    detailTbody.innerHTML = `<tr><td colspan="5"><div class="admin-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <div class="admin-empty-title">Aucun pronostic enregistré</div>
+    </div></td></tr>`;
+  } else {
+    detailTbody.innerHTML = list.map((p, i) => `
+      <tr>
+        <td style="color:var(--text-muted);font-size:13px;width:32px">${i+1}</td>
+        <td class="td-name" style="font-weight:700">${esc(p.participant)}</td>
+        <td>${esc(p.coureur)}</td>
+        <td style="color:var(--text-muted);font-size:13px">${esc(p.temps || '—')}</td>
+        <td style="text-align:right">
+          <button class="icon-btn delete" title="Supprimer" onclick="deletePronosticAdmin('${p.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </td>
+      </tr>`).join('');
+  }
+}
+
+function deletePronosticAdmin(id) {
+  const p = adminPronostics.find(x => x.id === id);
+  if (!p) return;
+  confirmDelete(`Supprimer le pronostic de "${p.participant}" ?`, () => {
+    SB.delete('pronostics', id).then(() => {
+      adminPronostics = adminPronostics.filter(x => x.id !== id);
+      DB.pronostics = adminPronostics;
+      renderVotesPage();
+      renderDashboard();
+      showToast('Pronostic supprimé');
+    }).catch(() => showToast('Erreur lors de la suppression'));
+  });
+}
+
+// ── PAGE: Dashboard ──
+function renderDashboard() {
+  const grid = document.getElementById('stats-grid');
+  const top3El = document.getElementById('dashboard-top3');
+
+  const nbCoureurs = DB.coureurs.length;
+  const nbActifs = DB.coureurs.filter(c => c.statut === 'active').length;
+  const nbPronostics = (adminPronostics.length || DB.pronostics.length);
+  const nbParticipants = nbPronostics;
+  const nbClassement = DB.classementCoureurs.length;
+
+  grid.innerHTML = `
+    <div class="stat-card"><div class="stat-label">Coureurs</div><div class="stat-value">${nbCoureurs}</div></div>
+    <div class="stat-card"><div class="stat-label">Coureurs actifs</div><div class="stat-value pink">${nbActifs}</div></div>
+    <div class="stat-card"><div class="stat-label">Pronostics</div><div class="stat-value">${nbPronostics}</div></div>
+    <div class="stat-card"><div class="stat-label">Participants</div><div class="stat-value">${nbParticipants}</div></div>
+    <div class="stat-card"><div class="stat-label">Au classement</div><div class="stat-value pink">${nbClassement}</div></div>
+  `;
+
+  // Top 3 pronostiqueurs
+  const scores = {};
+  DB.pronostics.forEach(p => {
+    const c = DB.coureurs.find(x => x.nom === p.coureur);
+    const pts = c ? parseFloat(c.cote) : 0;
+    if (!scores[p.participant]) scores[p.participant] = 0;
+    scores[p.participant] += pts;
+  });
+  const top3 = Object.entries(scores).sort((a,b) => b[1]-a[1]).slice(0,3);
+
+  if (!top3.length) {
+    top3El.innerHTML = `<div class="admin-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <div class="admin-empty-title">Aucun pronostiqueur</div>
+    </div>`;
+  } else {
+    const medals = ['#FFB800','#9E9E9E','#A0522D'];
+    top3El.innerHTML = top3.map(([nom, total], i) => `
+      <div class="vote-row">
+        <div class="rank-number" style="color:${medals[i] || 'var(--text-muted)'};font-weight:800;width:28px;text-align:center;flex-shrink:0">${i+1}</div>
+        <div class="vote-name">${esc(nom)}</div>
+        <div class="vote-count">${total.toFixed(2)} pts</div>
+      </div>`).join('');
+  }
+}
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── PAGE: Coureurs Admin ──
+function renderAdminCoureurs() {
+  const tbody = document.getElementById('admin-coureurs-tbody');
+  const countEl = document.getElementById('admin-coureurs-count');
+  if (!tbody) return;
+  countEl.textContent = `${DB.coureurs.length} coureur${DB.coureurs.length !== 1 ? 's' : ''}`;
+  if (!DB.coureurs.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="admin-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="5" r="2"/><path d="M12 7c-2 0-4 1-5 3l-2 5h3l1 4h6l1-4h3l-2-5c-1-2-3-3-5-3z"/></svg>
+      <div class="admin-empty-title">Aucun coureur</div>
+      <div class="admin-empty-sub">Ajoutez des coureurs avec le bouton + Ajouter</div>
+    </div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = DB.coureurs.map(c => {
+    const elimTour = c.eliminatedAt ? computeTourAt(new Date(c.eliminatedAt)) : null;
+    const elimLabel = c.eliminatedAt
+      ? `<span style="color:#e53935;font-size:12px;font-weight:600">Tour ${elimTour} — ${new Date(c.eliminatedAt).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span>`
+      : `<span style="color:#4caf50;font-size:12px;font-weight:600">En course</span>`;
+    return `
+    <tr>
+      <td>${c.photo ? `<img src="${esc(c.photo)}" style="width:36px;height:36px;object-fit:cover;border-radius:8px">` : '<div style="width:36px;height:36px;background:var(--gray-input);border-radius:8px"></div>'}</td>
+      <td class="td-name">${esc(c.nom)}</td>
+      <td>${elimLabel}</td>
+      <td class="td-actions" style="white-space:nowrap">
+        ${c.eliminatedAt
+          ? `<button class="icon-btn" title="Remettre en course" onclick="reinstaterCoureur(${c.id})" style="color:#4caf50">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+             </button>`
+          : `<button class="icon-btn" title="Marquer éliminé maintenant" onclick="eliminerCoureur(${c.id})" style="color:#e53935">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+             </button>`
+        }
+        <button class="icon-btn delete" title="Supprimer" onclick="deleteAdminCoureur(${c.id})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function computeTourAt(date) {
+  const start = new Date('2026-07-04T10:00:00');
+  if (date < start) return 0;
+  return Math.min(Math.floor((date - start) / (1000 * 60 * 60)) + 1, 100);
+}
+
+function eliminerCoureur(id) {
+  const c = DB.coureurs.find(x => x.id === id);
+  if (!c) return;
+  confirmDelete(`Marquer "${c.nom}" comme éliminé maintenant ?`, () => {
+    const now = new Date().toISOString();
+    SB.update('coureurs', id, { eliminatedAt: now, statut: 'inactive' }).then(() => {
+      c.eliminatedAt = now;
+      c.statut = 'inactive';
+      renderAdminCoureurs();
+      showToast(`${c.nom} éliminé — Tour ${computeTourAt(new Date(now))}`);
+    }).catch(() => showToast('Erreur réseau'));
+  });
+}
+
+function reinstaterCoureur(id) {
+  const c = DB.coureurs.find(x => x.id === id);
+  if (!c) return;
+  SB.update('coureurs', id, { eliminatedAt: null, statut: 'active' }).then(() => {
+    c.eliminatedAt = null;
+    c.statut = 'active';
+    renderAdminCoureurs();
+    showToast(`${c.nom} remis en course`);
+  }).catch(() => showToast('Erreur réseau'));
+}
+
+function updateCoureurField(id, field, value) {
+  const c = DB.coureurs.find(x => x.id === id);
+  if (!c) return;
+  SB.update('coureurs', id, { [field]: value }).then(() => {
+    c[field] = value;
+    showToast('Mis à jour');
+  }).catch(() => showToast('Erreur réseau'));
+}
+
+function deleteAdminCoureur(id) {
+  const c = DB.coureurs.find(x => x.id === id);
+  if (!c) return;
+  confirmDelete(`Supprimer "${c.nom}" ?`, () => {
+    SB.delete('coureurs', id).then(() => {
+      DB.coureurs = DB.coureurs.filter(x => x.id !== id);
+      renderAdminCoureurs();
+      renderClassementPage();
+      renderDashboard();
+      showToast('Coureur supprimé');
+    }).catch(() => showToast('Erreur réseau'));
+  });
+}
+
+function openAdminAddCoureur() {
+  const nom = prompt('Nom du coureur :');
+  if (!nom || !nom.trim()) return;
+  SB.insert('coureurs', { nom: nom.trim(), statut: 'active', photo: '' }).then(rows => {
+    const newC = rows[0];
+    DB.coureurs.push(newC);
+    renderAdminCoureurs();
+    renderDashboard();
+    showToast('Coureur ajouté');
+  }).catch(() => showToast('Erreur réseau'));
+}
+</script>
+</body>
+</html>

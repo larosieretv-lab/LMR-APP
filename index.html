@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>LMR App</title>
+  <link rel="stylesheet" href="style.css?v=15" />
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar Nav -->
+    <nav class="bottom-nav">
+      <div class="sidebar-logo">
+        <img src="Logo/LMR.png" alt="LMR" class="logo-lmr" />
+        <img src="Logo/Larosiere.png" alt="La Rosière" class="logo-larosiere" />
+      </div>
+      <button class="nav-btn active" data-page="coureurs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><path d="M12 7c-2 0-4 1-5 3l-2 5h3l1 4h6l1-4h3l-2-5c-1-2-3-3-5-3z"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/></svg>
+        <span>Coureurs</span>
+      </button>
+      <button class="nav-btn" data-page="pronostics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <span>Pronostics</span>
+      </button>
+      <button class="nav-btn" data-page="classement-coureurs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 20 18 10"/><polyline points="12 20 12 4"/><polyline points="6 20 6 14"/></svg>
+        <span>Classement Coureurs</span>
+      </button>
+      <div class="sidebar-admin-link-wrap">
+        <a href="admin.html" class="sidebar-admin-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Espace Admin
+        </a>
+      </div>
+    </nav>
+
+    <!-- Mobile logo header -->
+    <div class="mobile-logo-header">
+      <img src="Logo/LMR.png" alt="LMR" class="logo-lmr" />
+      <span class="logo-cross">×</span>
+      <img src="Logo/Larosiere.png" alt="La Rosière" class="logo-larosiere" />
+    </div>
+
+    <!-- Tour counter -->
+    <div class="tour-counter" id="tour-counter">
+      <div class="tour-counter-label">Tours</div>
+      <div class="tour-digits">
+        <div class="tour-digit" id="tour-digit-tens">0</div>
+        <div class="tour-digit" id="tour-digit-ones">0</div>
+      </div>
+    </div>
+
+    <!-- Pages -->
+    <div id="page-coureurs" class="page active"></div>
+    <div id="page-pronostics" class="page"></div>
+    <div id="page-classement-coureurs" class="page"></div>
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+      <div class="modal" id="modal-box">
+        <div class="modal-header">
+          <h2 id="modal-title">Ajouter</h2>
+          <button id="modal-close" class="modal-close">✕</button>
+        </div>
+        <div id="modal-body" class="modal-body"></div>
+        <div class="modal-footer">
+          <button class="btn-cancel" id="btn-cancel">Annuler</button>
+          <button class="btn-save" id="btn-save">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawer Menu -->
+    <div id="drawer-overlay" class="drawer-overlay hidden"></div>
+    <div id="drawer" class="drawer hidden">
+      <div class="drawer-header">
+        <span class="drawer-logo">LMR</span>
+        <button id="drawer-close">✕</button>
+      </div>
+      <nav class="drawer-nav">
+        <button class="drawer-link" data-page="coureurs">🚴 Coureurs</button>
+        <button class="drawer-link" data-page="pronostics">✅ Pronostics</button>
+        <button class="drawer-link" data-page="classement-coureurs">🏆 Classement Coureurs</button>
+      </nav>
+    </div>
+  </div>
+
+  <script src="data.js?v=6"></script>
+  <script src="config.js"></script>
+  <script src="app.js?v=13"></script>
+</body>
+</html>
